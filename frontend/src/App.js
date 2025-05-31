@@ -6,7 +6,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 
 function PrivateRoute({ children }) {
   const { user } = useAuth();
-  return user ? children : <Navigate to="/login" />;
+  if (!user) return <Navigate to="/login" />;
+  return children;
 }
 
 function App() {

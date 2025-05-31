@@ -7,11 +7,21 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    setUser(token ? { token } : null);
+    if (token) setUser({ token });
   }, []);
 
+  const login = (token) => {
+    localStorage.setItem('token', token);
+    setUser({ token });
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    setUser(null);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, setUser }}>
+    <AuthContext.Provider value={{ user, setUser, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

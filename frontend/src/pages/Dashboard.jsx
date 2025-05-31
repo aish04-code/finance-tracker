@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+
 import { Pie, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -12,22 +15,36 @@ import {
   Title,
 } from 'chart.js';
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title
+);
 
 function Dashboard() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Form state
+  // form state
   const [amount, setAmount] = useState('');
   const [type, setType] = useState('expense');
   const [category, setCategory] = useState('');
   const [note, setNote] = useState('');
   const [date, setDate] = useState('');
-
-  // Edit state
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
+
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const fetchTransactions = async () => {
     try {
@@ -60,7 +77,8 @@ function Dashboard() {
           date,
         });
       }
-      // Reset form
+
+      // reset form
       setAmount('');
       setType('expense');
       setCategory('');
@@ -68,6 +86,7 @@ function Dashboard() {
       setDate('');
       setIsEditing(false);
       setEditId(null);
+
       fetchTransactions();
     } catch (err) {
       alert('Failed to save transaction');
@@ -100,7 +119,7 @@ function Dashboard() {
     const monthlyIncome = {};
     const monthlyExpense = {};
 
-    transactions.forEach(tx => {
+    transactions.forEach((tx) => {
       const month = new Date(tx.date).toLocaleString('default', { month: 'short' });
       if (tx.type === 'income') {
         monthlyIncome[month] = (monthlyIncome[month] || 0) + Number(tx.amount);
@@ -109,12 +128,14 @@ function Dashboard() {
       }
     });
 
-    const months = [...new Set(transactions.map(tx => new Date(tx.date).toLocaleString('default', { month: 'short' })))];
+    const months = [...new Set(transactions.map((tx) =>
+      new Date(tx.date).toLocaleString('default', { month: 'short' })
+    ))];
 
     return {
       labels: months,
-      income: months.map(month => monthlyIncome[month] || 0),
-      expense: months.map(month => monthlyExpense[month] || 0),
+      income: months.map((m) => monthlyIncome[m] || 0),
+      expense: months.map((m) => monthlyExpense[m] || 0),
     };
   };
 
@@ -124,7 +145,15 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <h1 className="text-3xl font-bold mb-6">My Transactions</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">My Transactions</h1>
+        <button
+          onClick={handleLogout}
+          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+        >
+          Logout
+        </button>
+      </div>
 
       {/* Form */}
       <form
@@ -194,7 +223,7 @@ function Dashboard() {
         )}
       </form>
 
-      {/* Summary and Pie */}
+      {/* Summary + Pie */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="bg-white p-4 rounded-xl shadow">
           <h2 className="text-lg font-bold mb-2">Summary</h2>
@@ -206,11 +235,8 @@ function Dashboard() {
           </span></p>
           <p className="font-bold mt-2">
             Balance: $
-            {
-              transactions.reduce((sum, t) => {
-                return t.type === 'income' ? sum + Number(t.amount) : sum - Number(t.amount);
-              }, 0)
-            }
+            {transactions.reduce((sum, t) =>
+              t.type === 'income' ? sum + Number(t.amount) : sum - Number(t.amount), 0)}
           </p>
         </div>
 
@@ -221,10 +247,10 @@ function Dashboard() {
               labels: [...new Set(transactions.map(t => t.category))],
               datasets: [{
                 label: 'Amount',
-                data: transactions.reduce((acc, t) => {
+                data: Object.values(transactions.reduce((acc, t) => {
                   acc[t.category] = (acc[t.category] || 0) + Number(t.amount);
                   return acc;
-                }, {}),
+                }, {})),
                 backgroundColor: [
                   '#34d399', '#f87171', '#60a5fa', '#fbbf24', '#a78bfa',
                   '#fb7185', '#4ade80', '#facc15', '#38bdf8', '#f472b6'
@@ -251,7 +277,7 @@ function Dashboard() {
                 label: 'Expense',
                 backgroundColor: '#f87171',
                 data: getMonthlyData().expense,
-              }
+              },
             ],
           }}
           options={{
@@ -266,7 +292,7 @@ function Dashboard() {
         />
       </div>
 
-      {/* Transaction List */}
+      {/* Transactions List */}
       {loading ? (
         <p>Loading...</p>
       ) : transactions.length === 0 ? (
