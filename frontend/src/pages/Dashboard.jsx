@@ -12,6 +12,10 @@ function Dashboard() {
   const [note, setNote] = useState('');
   const [date, setDate] = useState('');
 
+  // Edit mode
+  const [isEditing, setIsEditing] = useState(false);
+  const [editId, setEditId] = useState(null);
+
   const fetchTransactions = async () => {
     try {
       const res = await api.get('/transactions');
@@ -26,45 +30,70 @@ function Dashboard() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/transactions', {
-        amount,
-        type,
-        category,
-        note,
-        date,
-      });
+      if (isEditing && editId) {
+        await api.put(`/transactions/${editId}`, {
+          amount,
+          type,
+          category,
+          note,
+          date,
+        });
+      } else {
+        await api.post('/transactions', {
+          amount,
+          type,
+          category,
+          note,
+          date,
+        });
+      }
+
+      // Reset form
       setAmount('');
       setType('expense');
       setCategory('');
       setNote('');
       setDate('');
-      fetchTransactions(); // refresh list
+      setIsEditing(false);
+      setEditId(null);
+
+      fetchTransactions();
     } catch (err) {
-      alert('Failed to add transaction');
+      alert('Failed to save transaction');
       console.error(err);
     }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this transaction?')) return;
+    try {
+      await api.delete(`/transactions/${id}`);
+      fetchTransactions();
+    } catch (err) {
+      alert('Failed to delete transaction');
+      console.error(err);
+    }
+  };
+
+  const handleEdit = (tx) => {
+    setIsEditing(true);
+    setEditId(tx._id);
+    setAmount(tx.amount);
+    setType(tx.type);
+    setCategory(tx.category);
+    setNote(tx.note);
+    setDate(tx.date.split('T')[0]); // For input type="date"
   };
 
   useEffect(() => {
     fetchTransactions();
   }, []);
-  
-const handleDelete = async (id) => {
-  if (!window.confirm('Are you sure you want to delete this transaction?')) return;
-  try {
-    await api.delete(`/transactions/${id}`);
-    fetchTransactions(); // Refresh after deletion
-  } catch (err) {
-    alert('Failed to delete transaction');
-    console.error(err);
-  }
-};
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <h1 className="text-3xl font-bold mb-6">My Transactions</h1>
 
-      {/* Add Transaction Form */}
+      {/* Form */}
       <form
         onSubmit={handleSubmit}
         className="bg-white p-4 rounded-xl shadow mb-6 grid grid-cols-1 md:grid-cols-2 gap-4"
@@ -111,11 +140,29 @@ const handleDelete = async (id) => {
           type="submit"
           className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700 md:col-span-2"
         >
-          Add Transaction
+          {isEditing ? 'Update Transaction' : 'Add Transaction'}
         </button>
+
+        {isEditing && (
+          <button
+            type="button"
+            onClick={() => {
+              setIsEditing(false);
+              setEditId(null);
+              setAmount('');
+              setType('expense');
+              setCategory('');
+              setNote('');
+              setDate('');
+            }}
+            className="bg-gray-400 text-white p-2 rounded hover:bg-gray-500 md:col-span-2"
+          >
+            Cancel Edit
+          </button>
+        )}
       </form>
 
-      {/* Transaction List */}
+      {/* Transactions */}
       {loading ? (
         <p>Loading...</p>
       ) : transactions.length === 0 ? (
@@ -123,39 +170,49 @@ const handleDelete = async (id) => {
       ) : (
         <div className="grid gap-4">
           {transactions.map((tx) => (
-        <div key={tx._id} className="p-4 bg-white rounded-xl shadow flex justify-between items-center border-l-4"
-            style={{
-            borderColor: tx.type === 'income' ? '#22c55e' : '#ef4444'
-            }}
-        >
-            <div>
-            <p className="text-xl font-semibold">${tx.amount}</p>
-            <p className="text-gray-600">{tx.category} • {tx.note}</p>
-            <p className="text-sm text-gray-400">
-                {new Date(tx.date).toLocaleDateString()}
-            </p>
-            </div>
-            <div className="flex items-center gap-3">
-            <span
-                className={`text-sm font-semibold px-3 py-1 rounded-full ${
-                tx.type === 'income'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                }`}
+            <div
+              key={tx._id}
+              className="p-4 bg-white rounded-xl shadow flex justify-between items-center border-l-4"
+              style={{
+                borderColor: tx.type === 'income' ? '#22c55e' : '#ef4444',
+              }}
             >
-                {tx.type}
-            </span>
-            <button
-                onClick={() => handleDelete(tx._id)}
-                className="text-red-500 hover:text-red-700 font-bold text-lg"
-                title="Delete"
-            >
-                ✕
-            </button>
+              <div>
+                <p className="text-xl font-semibold">${tx.amount}</p>
+                <p className="text-gray-600">
+                  {tx.category} • {tx.note}
+                </p>
+                <p className="text-sm text-gray-400">
+                  {new Date(tx.date).toLocaleDateString()}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span
+                  className={`text-sm font-semibold px-3 py-1 rounded-full ${
+                    tx.type === 'income'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
+                  }`}
+                >
+                  {tx.type}
+                </span>
+                <button
+                  onClick={() => handleEdit(tx)}
+                  className="text-blue-500 hover:text-blue-700 font-bold text-lg"
+                  title="Edit"
+                >
+                  ✎
+                </button>
+                <button
+                  onClick={() => handleDelete(tx._id)}
+                  className="text-red-500 hover:text-red-700 font-bold text-lg"
+                  title="Delete"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
-        </div>
-        ))}
-
+          ))}
         </div>
       )}
     </div>
