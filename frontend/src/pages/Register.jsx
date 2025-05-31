@@ -54,6 +54,13 @@ function Register() {
         <button className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
           Register
         </button>
+        <p className="mt-4 text-sm text-center">
+          Already have an account?{' '}
+          <a href="/login" className="text-blue-600 hover:underline">
+            Login
+          </a>
+        </p>
+
       </form>
     </div>
   );

@@ -46,6 +46,12 @@ function Login() {
         <button className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
           Login
         </button>
+          <p className="mt-4 text-sm text-center">
+            Don't have an account?{' '}
+              <a href="/register" className="text-blue-600 hover:underline">
+               Register
+              </a>
+           </p>
       </form>
     </div>
   );
