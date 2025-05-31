@@ -8,6 +8,9 @@ app.use(cors());
 app.use(express.json());
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
+const transactionRoutes = require('./routes/transactions');
+app.use('/api/transactions', transactionRoutes);
+
 
 
 app.get('/', (req, res) => {
