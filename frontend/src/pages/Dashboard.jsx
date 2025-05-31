@@ -48,6 +48,17 @@ function Dashboard() {
   useEffect(() => {
     fetchTransactions();
   }, []);
+  
+const handleDelete = async (id) => {
+  if (!window.confirm('Are you sure you want to delete this transaction?')) return;
+  try {
+    await api.delete(`/transactions/${id}`);
+    fetchTransactions(); // Refresh after deletion
+  } catch (err) {
+    alert('Failed to delete transaction');
+    console.error(err);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -112,33 +123,39 @@ function Dashboard() {
       ) : (
         <div className="grid gap-4">
           {transactions.map((tx) => (
-            <div
-              key={tx._id}
-              className="p-4 bg-white rounded-xl shadow flex justify-between items-center border-l-4"
-              style={{
-                borderColor: tx.type === 'income' ? '#22c55e' : '#ef4444',
-              }}
-            >
-              <div>
-                <p className="text-xl font-semibold">${tx.amount}</p>
-                <p className="text-gray-600">
-                  {tx.category} • {tx.note}
-                </p>
-                <p className="text-sm text-gray-400">
-                  {new Date(tx.date).toLocaleDateString()}
-                </p>
-              </div>
-              <span
+        <div key={tx._id} className="p-4 bg-white rounded-xl shadow flex justify-between items-center border-l-4"
+            style={{
+            borderColor: tx.type === 'income' ? '#22c55e' : '#ef4444'
+            }}
+        >
+            <div>
+            <p className="text-xl font-semibold">${tx.amount}</p>
+            <p className="text-gray-600">{tx.category} • {tx.note}</p>
+            <p className="text-sm text-gray-400">
+                {new Date(tx.date).toLocaleDateString()}
+            </p>
+            </div>
+            <div className="flex items-center gap-3">
+            <span
                 className={`text-sm font-semibold px-3 py-1 rounded-full ${
-                  tx.type === 'income'
+                tx.type === 'income'
                     ? 'bg-green-100 text-green-800'
                     : 'bg-red-100 text-red-800'
                 }`}
-              >
+            >
                 {tx.type}
-              </span>
+            </span>
+            <button
+                onClick={() => handleDelete(tx._id)}
+                className="text-red-500 hover:text-red-700 font-bold text-lg"
+                title="Delete"
+            >
+                ✕
+            </button>
             </div>
-          ))}
+        </div>
+        ))}
+
         </div>
       )}
     </div>
